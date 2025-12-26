@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Users from "../models/auth.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const Signup = async(req,res) => {
  const { name,email,password }  = req.body;
@@ -12,7 +13,8 @@ export const Signup = async(req,res) => {
    else {
     const hashedPassword = await bcrypt.hash(password,10);
     const newUser = await Users.create({name,email,password:hashedPassword});
-    return res.status(201).json(newUser);
+    const token = jwt.sign({ email: newUser.email, id: newUser._id }, process.env.JWT_SECRET || "test", { expiresIn: '1h' });
+    return res.status(201).json({ result: newUser, token });
    }
   } 
   catch(error){
@@ -32,7 +34,8 @@ export const Login = async(req,res) => {
     if(!isPasswordCorrect){
       return res.status(400).json({message:"Invalid credentials"});
     }
-    return res.status(200).json(existingUser);
+    const token = jwt.sign({ email: existingUser.email, id: existingUser._id }, process.env.JWT_SECRET || "test", { expiresIn: '1h' });
+    return res.status(200).json({ result: existingUser, token });
   } 
   catch(error){
     console.log(error);

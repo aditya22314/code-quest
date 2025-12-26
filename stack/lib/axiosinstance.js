@@ -7,6 +7,19 @@ const axiosInstance = axios.create({
     },
 });
 
+axiosInstance.interceptors.request.use((req) => {
+    if (typeof window !== "undefined") {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            if (user?.token) {
+                req.headers.Authorization = `Bearer ${user.token}`;
+            }
+        }
+    }
+    return req;
+});
+
 console.log("Axios BaseURL:", axiosInstance.defaults.baseURL);
 
 export default axiosInstance;

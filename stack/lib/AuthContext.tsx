@@ -25,8 +25,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
         setLoading(true);
         const response = await axiosInstance.post("/user/signup",{name,email,password});
-        setUser(response.data);
-        localStorage.setItem("user",JSON.stringify(response.data));
+        const { result, token } = response.data;
+        const userData = { ...result, token };
+        setUser(userData);
+        localStorage.setItem("user",JSON.stringify(userData));
         setLoading(false);
     } catch (error:any) {
         console.log(error);
@@ -39,8 +41,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
         setLoading(true);
         const response = await axiosInstance.post("/user/login",{email,password});
-        setUser(response.data);
-        localStorage.setItem("user",JSON.stringify(response.data));
+        const { result, token } = response.data;
+        const userData = { ...result, token };
+        setUser(userData);
+        localStorage.setItem("user",JSON.stringify(userData));
         setLoading(false);
     } catch (error:any) {
         console.log(error);
