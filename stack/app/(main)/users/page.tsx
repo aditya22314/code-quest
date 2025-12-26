@@ -3,9 +3,10 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import Mainlayout from "@/layout/Mainlayout";
+import axiosInstance from "@/lib/axiosinstance";
 import { Calendar, Search } from "lucide-react";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const mockUsers = [
   {
@@ -35,8 +36,23 @@ const mockUsers = [
 ];
 
 export default function UsersPage() {
-  const [users] = useState<any[]>(mockUsers);
-  const [loading] = useState(false);
+const [users, setUsers] = useState<any[]>([]);
+const [loading, setLoading] = useState(false);
+
+useEffect(()=>{
+  const fetchUser = async()=>{
+    const res = await axiosInstance.get("/user/getallusers")
+    if(res.status == 200){
+      setUsers(res.data)
+      setLoading(false)
+    }
+    else{
+      console.log("Failed to fetch users")
+    }
+    setLoading(false)
+  }
+  fetchUser()
+},[])
 
   if (loading) {
     return (

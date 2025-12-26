@@ -1,19 +1,64 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
+import axiosInstance from "./axiosinstance";
 
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user] = useState({
-    _id: "u1",
-    name: "Mock User",
-    email: "mock@example.com",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-  });
+  const [user, setUser] = useState<any>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setIsAuthReady(true);
+  }, []);
+
+ const [loading, setLoading] = useState(false);
+
+ const [error,setError] = useState(null);
+
+ const SignUp = async({name,email,password}:any) => {
+    try {
+        setLoading(true);
+        const response = await axiosInstance.post("/user/signup",{name,email,password});
+        setUser(response.data);
+        localStorage.setItem("user",JSON.stringify(response.data));
+        setLoading(false);
+    } catch (error:any) {
+        console.log(error);
+        setError(error.response.data.message);
+        setLoading(false);
+    }
+ }
+
+ const Login = async({email,password}:any) => {
+    try {
+        setLoading(true);
+        const response = await axiosInstance.post("/user/login",{email,password});
+        setUser(response.data);
+        localStorage.setItem("user",JSON.stringify(response.data));
+        setLoading(false);
+    } catch (error:any) {
+        console.log(error);
+        setError(error.response.data.message);
+        setLoading(false);
+    }
+ } 
+ const Logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+ }
+  const setCurrentUser = (userData: any) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: true }}>
+    <AuthContext.Provider value={{ user, SignUp, Login, Logout, loading, error, isAuthReady, setCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );

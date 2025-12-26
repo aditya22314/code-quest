@@ -14,28 +14,35 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const {SignUp,loading:errorLoading} = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.id]: e.target.value });
-  };
-
-  const handlesubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
       return;
     }
-    
     setLoading(true);
-    setTimeout(() => {
-        setLoading(false);
-        router.push("/login");
-    }, 1000);
+   try {
+    await SignUp(form);
+    setLoading(false);
+    router.push("/login");
+   } catch (error) {
+    console.log(error);
+    setLoading(false);
+   }
+ };
+ 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
   };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -52,7 +59,7 @@ export default function SignUpPage() {
             </span>
           </Link>
         </div>
-        <form onSubmit={handlesubmit}>
+        <form onSubmit={handleSubmit}>
           <Card>
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-xl lg:text-2xl">

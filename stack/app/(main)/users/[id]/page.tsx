@@ -16,56 +16,104 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Mainlayout from "@/layout/Mainlayout";
 import { useAuth } from "@/lib/AuthContext";
+import axiosInstance from "@/lib/axiosinstance";
 import { Calendar, Edit, Plus, X } from "lucide-react";
 import { useParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-const mockUserData: Record<string, any> = {
-  "1": {
-    _id: "1",
-    name: "John Doe",
-    joinDate: "2019-03-15",
-    about:
-      "Full-stack developer with 8+ years of experience in JavaScript, React, and Node.js. Passionate about clean code and helping others learn programming. I enjoy working on open-source projects and contributing to the developer community.",
-    tags: [
-      "javascript",
-      "react",
-      "node.js",
-      "typescript",
-      "python",
-      "mongodb",
-    ],
-  },
-  "2": {
-    _id: "2",
-    name: "Felix Rodriguez",
-    joinDate: "2020-07-22",
-    about: "Competitive programmer and C++ enthusiast.",
-    tags: ["c++", "templates", "algorithms"],
-  }
-};
+// const mockUserData: Record<string, any> = {
+//   "1": {
+//     _id: "1",
+//     name: "John Doe",
+//     joinDate: "2019-03-15",
+//     about:
+//       "Full-stack developer with 8+ years of experience in JavaScript, React, and Node.js. Passionate about clean code and helping others learn programming. I enjoy working on open-source projects and contributing to the developer community.",
+//     tags: [
+//       "javascript",
+//       "react",
+//       "node.js",
+//       "typescript",
+//       "python",
+//       "mongodb",
+//     ],
+//   },
+//   "2": {
+//     _id: "2",
+//     name: "Felix Rodriguez",
+//     joinDate: "2020-07-22",
+//     about: "Competitive programmer and C++ enthusiast.",
+//     tags: ["c++", "templates", "algorithms"],
+//   }
+// };
 
 export default function UserDetailPage() {
-  const { user } = useAuth();
+  const { user, setCurrentUser } = useAuth();
   const params = useParams();
   const id = params.id as string;
   
-  const initialUser = mockUserData[id] || mockUserData["1"];
-  const [users, setusers] = useState<any>(initialUser);
+  const [profileUser, setProfileUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: initialUser.name,
-    about: initialUser.about || "",
-    tags: initialUser.tags || [],
+    name: "",
+    about: "",
+    tags: [] as string[],
   });
   const [newTag, setNewTag] = useState("");
 
-  const handleSaveProfile = () => {
-    setusers({
-      ...users,
-      ...editForm
-    });
-    setIsEditing(false);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        const res = await axiosInstance.get(`/user/getuser/${id}`);
+        // res.data is the user object directly from the new endpoint
+        const userData = res.data;
+        
+        if (userData) {
+          setProfileUser(userData);
+          setEditForm({
+            name: userData.name,
+            about: userData.about || "",
+            tags: userData.tags || [],
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        console.error("Error fetching user profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, [id]);
+
+  const handleSaveProfile = async () => {
+    console.log(editForm, "editForm");
+    const finalTags = [...editForm.tags];
+    const pendingTag = newTag.trim();
+    
+    // Auto-add the pending tag if the user forgot to click the plus button
+    if (pendingTag && !finalTags.includes(pendingTag)) {
+      finalTags.push(pendingTag);
+    }
+
+    const payload = { ...editForm, tags: finalTags };
+
+    try {
+      console.log("Saving payload:", payload);
+      const res = await axiosInstance.patch(`/user/updateprofile/${user?._id}`, payload);
+      if (res.status === 200) {
+        setProfileUser(res.data);
+        // Sync with global auth state if it's the current user's profile
+        if (user?._id === id) {
+          setCurrentUser(res.data);
+        }
+        setNewTag(""); // Clear pending tag on success
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
   };
 
   const handleAddTag = () => {
@@ -79,12 +127,34 @@ export default function UserDetailPage() {
   const handleRemoveTag = (tagToRemove: string) => {
     setEditForm({
       ...editForm,
-      tags: editForm.tags.filter((tag: any) => tag !== tagToRemove),
+      tags: editForm.tags.filter((tag: string) => tag !== tagToRemove),
     });
   };
 
-  const isOwnProfile = id === user?._id || id === "1"; // Mocking own profile for demo
+  const isOwnProfile = id === user?._id;
 
+  if (loading) {
+    return (
+      <Mainlayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </Mainlayout>
+    );
+  }
+
+  if (!profileUser) {
+    return (
+      <Mainlayout>
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold text-gray-700">User not found</h2>
+          <Button variant="link" className="mt-4" onClick={() => window.history.back()}>
+            Go Back
+          </Button>
+        </div>
+      </Mainlayout>
+    );
+  }
   return (
     <Mainlayout>
       <div className="max-w-6xl">
@@ -92,7 +162,7 @@ export default function UserDetailPage() {
         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 mb-8">
           <Avatar className="w-24 h-24 lg:w-32 lg:h-32 rounded-lg">
             <AvatarFallback className="text-2xl lg:text-3xl bg-blue-100 text-blue-700">
-              {users.name
+              {profileUser.name
                 .split(" ")
                 .map((n: any) => n[0])
                 .join("")}
@@ -103,7 +173,7 @@ export default function UserDetailPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-1">
-                  {users.name}
+                  {profileUser.name}
                 </h1>
               </div>
 
@@ -228,7 +298,7 @@ export default function UserDetailPage() {
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-6 pb-6 border-b">
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
-                <span>Member since {new Date(users.joinDate).toLocaleDateString()}</span>
+                <span>Member since {profileUser.joinDate ? new Date(profileUser.joinDate).toLocaleDateString() : "Loading..."}</span>
               </div>
             </div>
 
@@ -260,7 +330,7 @@ export default function UserDetailPage() {
               </CardHeader>
               <CardContent className="px-0">
                 <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm lg:text-base">
-                  {users.about || "This user hasn't added an about section yet."}
+                  {profileUser.about || "This user hasn't added an about section yet."}
                 </p>
               </CardContent>
             </Card>
@@ -273,7 +343,7 @@ export default function UserDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {users.tags.map((tag: string) => (
+                  {profileUser.tags.map((tag: string) => (
                     <Badge
                       key={tag}
                       variant="secondary"
@@ -282,7 +352,7 @@ export default function UserDetailPage() {
                       {tag}
                     </Badge>
                   ))}
-                  {users.tags.length === 0 && (
+                  {profileUser.tags.length === 0 && (
                     <span className="text-sm text-gray-400">No tags added yet.</span>
                   )}
                 </div>

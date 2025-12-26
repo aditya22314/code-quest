@@ -3,80 +3,31 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import Mainlayout from "@/layout/Mainlayout";
+import axiosInstance from "@/lib/axiosinstance";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const questions = [
-  {
-    _id: 1,
-    upvote: { length: 0 },
-    noofanswer: 0,
-    answer: { length: 0 },
-    views: 3,
-    questiontitle:
-      "Mouse Cursor in 16-bit Assembly (NASM) Overwrites Screen Content in VGA Mode 0x12",
-    questionbody:
-      "I'm developing a PS/2 mouse driver in 16-bit assembly (NASM) for a custom operating system running in VGA mode 0x12 (640x480, 16 colors). The driver initializes the mouse, handles mouse events, and ...",
-    questiontags: ["assembly", "operating-system", "driver", "osdev"],
-    userposted: "PR0X",
-    userid: 1,
-    authorRep: 3,
-    askedon: new Date().toISOString(),
-  },
-  {
-    _id: 2,
-    upvote: { length: 0 },
-    noofanswer: 1,
-    answer: { length: 1 },
-    views: 12,
-    questiontitle:
-      "Template specialization inside a template class using class template parameters",
-    questionbody:
-      "template<typename TypA, typename TypX> struct MyClass { using TypAlias = TypA<TypX>; // error: 'TypA' is not a template [-Wtemplate-body] }; MyClass is very often specialized like ...",
-    questiontags: ["c++", "templates"],
-    userposted: "Felix.leg",
-    userid: 2,
-    authorRep: 799,
-    askedon: new Date().toISOString(),
-  },
-  {
-    _id: 3,
-    upvote: { length: 0 },
-    noofanswer: 0,
-    answer: { length: 0 },
-    views: 13,
-    questiontitle: "How can i block user with middleware?",
-    questionbody:
-      "The problem I am trying to create a complete user login form in NextJS and I want to block the user to go to other pages without a login process before. So online i found that one of the most complete ...",
-    questiontags: ["node.js", "forms", "authentication", "next.js", "middleware"],
-    userposted: "Aledi5",
-    userid: 3,
-    authorRep: 31,
-    askedon: new Date().toISOString(),
-  },
-  {
-    _id: 4,
-    upvote: { length: 0 },
-    noofanswer: 0,
-    answer: { length: 0 },
-    views: 6,
-    questiontitle:
-      "call:fail action: private-web3-wallet-v2-o pen-wallet-connect, error: Pairing error: Subscribe error: Timed out waiting for 60000 ms /what it means",
-    questionbody:
-      "Can't connect my web3 wallet with a dApp. A message pops: Accounts must be CAIP-10 compliant The error message reads: call:fail action: private-web3-wallet-v2-o pen-wallet-connect, error: Pairing ...",
-    questiontags: ["web3", "wallet", "blockchain"],
-    userposted: "CryptoUser",
-    userid: 4,
-    authorRep: 1,
-    askedon: new Date().toISOString(),
-  },
-];
+
 
 export default function Home() {
-  const [question] = useState<any>(questions);
+  const [question, setQuestion] = useState<any>(null);
   const [loading] = useState(false);
   const router = useRouter();
+
+  useEffect(()=> {
+    const fetchQuestions = async () => {
+      try {
+        const res = await axiosInstance.get("/question/getallquestions");
+        if (res.status === 200) {
+          setQuestion(res.data);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    fetchQuestions();
+  },[])
 
   if (loading) {
     return (
@@ -133,28 +84,28 @@ export default function Home() {
             </div>
           </div>
           <div className="space-y-4">
-            {question.map((question: any) => (
-              <div key={question._id} className="border-b border-gray-200 pb-4">
+            {question.map((q: any) => (
+              <div key={q._id} className="border-b border-gray-200 pb-4">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex sm:flex-col items-center sm:items-center text-sm text-gray-600 sm:w-16 lg:w-20 gap-4 sm:gap-2">
                     <div className="text-center">
                       <div className="font-medium">
-                        {question.upvote.length}
+                        {q.upvotes?.length || 0}
                       </div>
                       <div className="text-xs">votes</div>
                     </div>
                     <div className="text-center">
                       <div
                         className={`font-medium ${
-                          question.answer.length > 0
+                          q.answer?.length > 0
                             ? "text-green-600 bg-green-100 px-2 py-1 rounded"
                             : ""
                         }`}
                       >
-                        {question.noofanswer}
+                        {q.noOfAnswers || 0}
                       </div>
                       <div className="text-xs">
-                        {question.noofanswer === 1
+                        {q.noOfAnswers === 1
                           ? "answer"
                           : "answers"}
                       </div>
@@ -162,18 +113,18 @@ export default function Home() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link
-                      href={`/questions/${question._id}`}
+                      href={`/questions/${q._id}`}
                       className="text-blue-600 hover:text-blue-800 text-base lg:text-lg font-medium mb-2 block"
                     >
-                      {question.questiontitle}
+                      {q.questionTitle}
                     </Link>
                     <p className="text-gray-700 text-sm mb-3 line-clamp-2">
-                      {question.questionbody}
+                      {q.questionBody}
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-1">
-                        {question.questiontags.map((tag: any) => (
+                        {q.questionTags?.map((tag: any) => (
                           <div key={tag}>
                             <Badge
                               variant="secondary"
@@ -187,20 +138,20 @@ export default function Home() {
 
                       <div className="flex items-center text-xs text-gray-600 flex-shrink-0">
                         <Link
-                          href={`/users/${question.userid}`}
+                          href={`/users/${q.userId}`}
                           className="flex items-center"
                         >
                           <Avatar className="w-4 h-4 mr-1">
                             <AvatarFallback className="text-xs">
-                              {question.userposted[0]}
+                              {q.userPosted?.[0] || 'U'}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-blue-600 hover:text-blue-800 mr-1">
-                            {question.userposted}
+                            {q.userPosted}
                           </span>
                         </Link>
 
-                        <span>asked {new Date(question.askedon).toLocaleDateString()}</span>
+                        <span>asked {q.askedOn ? new Date(q.askedOn).toLocaleDateString() : 'recently'}</span>
                       </div>
                     </div>
                   </div>

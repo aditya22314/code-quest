@@ -14,8 +14,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
+import { useAuth } from "@/lib/AuthContext";
+
 export default function LoginPage() {
   const router = useRouter();
+  const { Login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
 
@@ -28,10 +31,14 @@ export default function LoginPage() {
     if (!form.email || !form.password) return;
     
     setLoading(true);
-    setTimeout(() => {
+    try {
+        await Login(form);
         setLoading(false);
         router.push("/");
-    }, 1000);
+    } catch (error) {
+        console.log(error);
+        setLoading(false);
+    }
   };
 
   return (
