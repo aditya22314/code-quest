@@ -21,9 +21,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
  const [error,setError] = useState(null);
 
- const SignUp = async({name,email,password}:any) => {
+  const SignUp = async({name,email,password}:any) => {
     try {
         setLoading(true);
+        setError(null);
         const response = await axiosInstance.post("/user/signup",{name,email,password});
         const { result, token } = response.data;
         const userData = { ...result, token };
@@ -34,12 +35,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log(error);
         setError(error.response.data.message);
         setLoading(false);
+        throw error;
     }
  }
 
  const Login = async({email,password}:any) => {
     try {
         setLoading(true);
+        setError(null);
         const response = await axiosInstance.post("/user/login",{email,password});
         const { result, token } = response.data;
         const userData = { ...result, token };
@@ -50,6 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log(error);
         setError(error.response.data.message);
         setLoading(false);
+        throw error;
     }
  } 
  const Logout = () => {

@@ -15,26 +15,30 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { toast } from "react-toastify";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const {SignUp,loading:errorLoading} = useAuth();
+  const {SignUp} = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
+      toast.error("Please fill in all fields");
       return;
     }
     setLoading(true);
    try {
     await SignUp(form);
     setLoading(false);
+    toast.success("Signup successful! Please login.");
     router.push("/login");
-   } catch (error) {
+   } catch (error: any) {
     console.log(error);
     setLoading(false);
+    toast.error(error.response?.data?.message || "Signup failed");
    }
  };
  

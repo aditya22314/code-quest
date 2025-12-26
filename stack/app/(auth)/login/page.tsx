@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 import { useAuth } from "@/lib/AuthContext";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,10 +35,12 @@ export default function LoginPage() {
     try {
         await Login(form);
         setLoading(false);
+        toast.success("Login successful!");
         router.push("/");
-    } catch (error) {
+    } catch (error: any) {
         console.log(error);
         setLoading(false);
+        toast.error(error.response?.data?.message || "Login failed");
     }
   };
 
