@@ -27,8 +27,12 @@ export const Navbar = () => {
                     </Link>
                    
                      <section className="hidden lg:flex items-center gap-4">
-                        {["About", "Products", "For Teams"].map((item, index) => (
-                            <Link href="/" key={index} className="flex items-center whitespace-nowrap hover:text-orange-500 transition-colors">
+                        {["About", "Products", "For Teams", "Public Space"].map((item, index) => (
+                            <Link 
+                                href={item === "Public Space" ? "/public-space" : "/"} 
+                                key={index} 
+                                className="flex items-center whitespace-nowrap hover:text-orange-500 transition-colors"
+                            >
                                 {item}
                             </Link>
                         ))}
@@ -40,9 +44,11 @@ export const Navbar = () => {
                 <section className="flex gap-3 items-center">
                     {!isAuthReady ? (
                         <div className="w-24 h-10 bg-gray-100 animate-pulse rounded" />
-                    ) : user ? (
+                     ) : user ? (
                         <>
-                            <img src={user?.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"} className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-gray-200" alt="User avatar" />
+                            <Link href={`/users/${user._id}`}>
+                                <img src={user?.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"} className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity" alt="User avatar" />
+                            </Link>
                             <Button className="hidden sm:flex bg-white border black text-black hover:bg-orange-100 hover:text-orange-600 border-gray-200" onClick={handleLogout}>
                                 Logout
                             </Button>
@@ -84,9 +90,20 @@ export const Navbar = () => {
                         {!isAuthReady ? (
                              <div className="w-full h-10 bg-gray-100 animate-pulse rounded" />
                         ) : user ? (
-                            <Button className="w-full mt-2 bg-orange-500 text-white hover:bg-orange-600 border-none" onClick={handleLogout}>
-                                Logout
-                            </Button>
+                            <div className="flex flex-col gap-2 w-full mt-2">
+                                <Link 
+                                    href={`/users/${user._id}`} 
+                                    className="w-full" 
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    <Button className="w-full bg-blue-500 text-white hover:bg-blue-600 border-none">
+                                        View Profile
+                                    </Button>
+                                </Link>
+                                <Button className="w-full bg-orange-500 text-white hover:bg-orange-600 border-none" onClick={handleLogout}>
+                                    Logout
+                                </Button>
+                            </div>
                         ) : (
                             <div className="flex flex-col gap-2 w-full mt-2">
                                 <Link href="/login" className="w-full" onClick={() => setIsOpen(false)}>

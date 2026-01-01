@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import Mainlayout from "@/layout/Mainlayout";
 import axiosInstance from "@/lib/axiosinstance";
-import { Calendar, Search } from "lucide-react";
+import { Calendar, Search, Users } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
@@ -35,9 +35,31 @@ const mockUsers = [
   },
 ];
 
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/AuthContext";
+import { toast } from "react-toastify";
+
 export default function UsersPage() {
+const { user: currentUser, setCurrentUser } = useAuth();
 const [users, setUsers] = useState<any[]>([]);
 const [loading, setLoading] = useState(false);
+
+const handleAddFriend = async (e: React.MouseEvent, friendId: string) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try {
+    const res = await axiosInstance.post(`/social/add-friend/${friendId}`);
+    if (res.status === 200) {
+      toast.success("Friend added!");
+      // Optionally refresh current user context to update friend count
+      const updatedUser = { ...currentUser, friends: [...(currentUser.friends || []), friendId] };
+      setCurrentUser(updatedUser);
+    }
+  } catch (error: any) {
+    toast.error(error.response?.data?.message || "Error adding friend");
+  }
+};
 
 useEffect(()=>{
   const fetchUser = async()=>{
@@ -102,12 +124,36 @@ useEffect(()=>{
                     <p className="text-xs text-gray-500 truncate">
                       @{user.username || user.name.toLowerCase().replace(" ", "")}
                     </p>
+                    <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
+                      <Users className="w-3 h-3" />
+                      <span>{user.friends?.length || 0} friends</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center text-xs text-gray-600">
-                  <Calendar className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                  <span>Joined {new Date(user.joinDate).getFullYear()}</span>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center text-xs text-gray-600">
+                    <Calendar className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                    <span>Joined {new Date(user.joinDate).getFullYear()}</span>
+                  </div>
+                  
+                  {currentUser && (
+                    currentUser._id === user._id ? (
+                      <Badge variant="secondary" className="h-7 text-[10px] px-2 bg-gray-100 text-gray-500 border-none pointer-events-none">
+                        You
+                      </Badge>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        variant={currentUser.friends?.includes(user._id) ? "outline" : "default"}
+                        onClick={(e) => handleAddFriend(e, user._id)}
+                        className={`h-7 text-[10px] px-2 ${currentUser.friends?.includes(user._id) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-600'}`}
+                        disabled={currentUser.friends?.includes(user._id)}
+                      >
+                        {currentUser.friends?.includes(user._id) ? "Friends" : "Add Friend"}
+                      </Button>
+                    )
+                  )}
                 </div>
               </div>
             </Link>

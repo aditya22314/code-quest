@@ -17,34 +17,11 @@ import { Textarea } from "@/components/ui/textarea";
 import Mainlayout from "@/layout/Mainlayout";
 import { useAuth } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
-import { Calendar, Edit, Plus, X } from "lucide-react";
+import { Calendar, Edit, Plus, X, Users } from "lucide-react";
 import { useParams } from "next/navigation";
+import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
 
-// const mockUserData: Record<string, any> = {
-//   "1": {
-//     _id: "1",
-//     name: "John Doe",
-//     joinDate: "2019-03-15",
-//     about:
-//       "Full-stack developer with 8+ years of experience in JavaScript, React, and Node.js. Passionate about clean code and helping others learn programming. I enjoy working on open-source projects and contributing to the developer community.",
-//     tags: [
-//       "javascript",
-//       "react",
-//       "node.js",
-//       "typescript",
-//       "python",
-//       "mongodb",
-//     ],
-//   },
-//   "2": {
-//     _id: "2",
-//     name: "Felix Rodriguez",
-//     joinDate: "2020-07-22",
-//     about: "Competitive programmer and C++ enthusiast.",
-//     tags: ["c++", "templates", "algorithms"],
-//   }
-// };
 
 export default function UserDetailPage() {
   const { user, setCurrentUser } = useAuth();
@@ -124,6 +101,24 @@ export default function UserDetailPage() {
     }
   };
 
+  const handleAddFriend = async () => {
+    try {
+      const res = await axiosInstance.post(`/social/add-friend/${id}`);
+      if (res.status === 200) {
+        toast.success("Friend added!");
+        // Update local profile user to show new friend count
+        const updatedProfile = { ...profileUser, friends: [...(profileUser.friends || []), user?._id] };
+        setProfileUser(updatedProfile);
+        
+        // Update global current user
+        const updatedCurrentUser = { ...user, friends: [...(user.friends || []), id] };
+        setCurrentUser(updatedCurrentUser);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error adding friend");
+    }
+  };
+
   const handleRemoveTag = (tagToRemove: string) => {
     setEditForm({
       ...editForm,
@@ -132,6 +127,7 @@ export default function UserDetailPage() {
   };
 
   const isOwnProfile = id === user?._id;
+  const isFriend = user?.friends?.includes(id);
 
   if (loading) {
     return (
@@ -293,6 +289,17 @@ export default function UserDetailPage() {
                   </DialogContent>
                 </Dialog>
               )}
+
+              {user && !isOwnProfile && (
+                <Button
+                  onClick={handleAddFriend}
+                  disabled={isFriend}
+                  className={`flex items-center gap-2 ${isFriend ? 'bg-green-100 text-green-700 hover:bg-green-100 border-none' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                >
+                  <Users className="w-4 h-4" />
+                  {isFriend ? "Friends" : "Add Friend"}
+                </Button>
+              )}
             </div>
             
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-6 pb-6 border-b">
@@ -303,6 +310,11 @@ export default function UserDetailPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-8">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                <span className="font-bold text-gray-700">{profileUser.friends?.length || 0}</span>
+                <span className="text-gray-500 text-xs uppercase tracking-wider">friends</span>
+              </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-yellow-400 rounded-full" />
                 <span className="font-bold text-gray-700">5</span>

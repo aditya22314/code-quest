@@ -6,8 +6,10 @@ const userSchema = mongoose.Schema({
     password: {type: String, required: true},
     about: String,
     tags: [String],
-    joinDate: {type: Date, default: Date.now}
-
+    joinDate: {type: Date, default: Date.now},
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    lastPostDate: { type: Date },
+    dailyPostCount: { type: Number, default: 0 }
 })
 
 export default mongoose.model("User", userSchema);
